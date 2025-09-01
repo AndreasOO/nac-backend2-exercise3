@@ -2,6 +2,8 @@ package org.springframework.backend2exercise3.controller;
 
 import ch.qos.logback.core.model.Model;
 import jakarta.validation.Valid;
+import org.springframework.backend2exercise3.service.TrelloService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 @Controller
 public class TaskController {
+
+    @Autowired
+    TrelloService trelloService;
 
     @GetMapping("/tasks/create")
     public String showCreateForm(Model model) {
@@ -26,7 +31,7 @@ public class TaskController {
 
         try {
             // Call your Jira/Trello service here
-            taskService.createTask(taskForm);
+            trelloService.createTask(taskForm);
             model.addAttribute("message", "Uppgift skapad framgångsrikt!");
             model.addAttribute("messageType", "success");
         } catch (Exception e) {
