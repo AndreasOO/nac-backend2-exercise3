@@ -1,0 +1,24 @@
+# Application Configuration
+server:
+  port: 8080
+
+spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+# Trello Configuration
+trello:
+  api:
+    base-url: https://api.trello.com/1
+    key: ${TRELLO_API_KEY:your-api-key-here}
+    token: ${TRELLO_API_TOKEN:your-api-token-here}
+    board-id: ${TRELLO_BOARD_ID:your-board-id-here}
+    # Optional: specify a default list ID, otherwise it will use the first list
+    default-list-id: ${TRELLO_DEFAULT_LIST_ID:}
+
+logging:
+  level:
+    com.example.trello: DEBUG
+    org.springframework.web.client: DEBUG
