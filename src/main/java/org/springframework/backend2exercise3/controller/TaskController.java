@@ -18,6 +18,12 @@ public class TaskController {
     @Autowired
     TrelloService trelloService;
 
+    @GetMapping("/")
+    public String home(Model model) {
+        model.addAttribute("taskForm", new TaskForm());
+        return "create-task";
+    }
+
     @GetMapping("/tasks/create")
     public String showCreateForm(Model model) {
         model.addAttribute("taskForm", new TaskForm());
