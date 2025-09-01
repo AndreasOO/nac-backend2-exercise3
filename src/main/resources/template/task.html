@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="sv" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skapa Uppgifter - Jira/Trello Integration</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .platform-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .platform-btn {
+            flex: 1;
+            max-width: 200px;
+            padding: 15px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            background: white;
+            color: #6b7280;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .platform-btn:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        .platform-btn.active {
+            border-color: #4f46e5;
+            background: #4f46e5;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .priority-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .priority-option {
+            padding: 8px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .priority-option:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+
+        .priority-option.selected {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: white;
+        }
+
+        .priority-high { border-color: #ef4444; color: #ef4444; }
+        .priority-high.selected { background: #ef4444; border-color: #ef4444; }
+
+        .priority-medium { border-color: #f59e0b; color: #f59e0b; }
+        .priority-medium.selected { background: #f59e0b; border-color: #f59e0b; }
+
+        .priority-low { border-color: #10b981; color: #10b981; }
+        .priority-low.selected { background: #10b981; border-color: #10b981; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .message.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .platform-selector {
+                flex-direction: column;
+            }
+
+            .priority-options {
+                justify-content: center;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-tasks"></i> Uppgiftshanterare</h1>
+        <p>Skapa och hantera uppgifter i Jira eller Trello</p>
+    </div>
+
+    <div class="form-container">
+        <!-- Success/Error Messages -->
+        <div th:if="${message}" th:class="${'message ' + messageType}" th:text="${message}"></div>
+
+        <form th:action="@{/tasks/create}" method="post" th:object="${taskForm}" id="taskForm">
+            <!-- Platform Selection -->
+            <div class="form-group">
+                <label>Välj plattform:</label>
+                <div class="platform-selector">
+                    <div class="platform-btn active" data-platform="jira">
+                        <i class="fab fa-atlassian"></i>
+                        Jira
+                    </div>
+                    <div class="platform-btn" data-platform="trello">
+                        <i class="fab fa-trello"></i>
+                        Trello
+                    </div>
+                </div>
+                <input type="hidden" th:field="*{platform}" id="platformInput" value="jira">
+            </div>
+
+            <!-- Task Title -->
+            <div class="form-group">
+                <label for="title">Uppgiftstitel *</label>
+                <input type="text" th:field="*{title}" class="form-control" id="title"
+                       placeholder="Skriv en beskrivande titel för uppgiften" required>
+                <div th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="message error"></div>
+            </div>
+
+            <!-- Task Description -->
+            <div class="form-group">
+                <label for="description">Beskrivning</label>
+                <textarea th:field="*{description}" class="form-control" id="description"
+                          placeholder="Beskriv uppgiften i detalj..."></textarea>
+            </div>
+
+            <!-- Priority Selection -->
+            <div class="form-group">
+                <label>Prioritet</label>
+                <div class="priority-options">
+                    <div class="priority-option priority-high" data-priority="HIGH">
+                        <i class="fas fa-exclamation-triangle"></i> Hög
+                    </div>
+                    <div class="priority-option priority-medium selected" data-priority="MEDIUM">
+                        <i class="fas fa-minus"></i> Medium
+                    </div>
+                    <div class="priority-option priority-low" data-priority="LOW">
+                        <i class="fas fa-arrow-down"></i> Låg
+                    </div>
+                </div>
+                <input type="hidden" th:field="*{priority}" id="priorityInput" value="MEDIUM">
+            </div>
+
+            <!-- Assignee (Jira specific) -->
+            <div class="form-group" id="assigneeGroup">
+                <label for="assignee">Tilldela till (valfritt)</label>
+                <input type="text" th:field="*{assignee}" class="form-control" id="assignee"
+                       placeholder="Användarnamn eller email">
+            </div>
+
+            <!-- Due Date -->
+            <div class="form-group">
+                <label for="dueDate">Förfallodatum (valfritt)</label>
+                <input type="date" th:field="*{dueDate}" class="form-control" id="dueDate">
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <i class="fas fa-plus"></i>
+                <span>Skapa Uppgift</span>
+                <div class="spinner hidden"></div>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Platform selection
+        const platformBtns = document.querySelectorAll('.platform-btn');
+        const platformInput = document.getElementById('platformInput');
+        const assigneeGroup = document.getElementById('assigneeGroup');
+
+        platformBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                platformBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                const platform = this.dataset.platform;
+                platformInput.value = platform;
+
+                // Show/hide assignee field based on platform
+                if (platform === 'trello') {
+                    assigneeGroup.style.display = 'none';
+                } else {
+                    assigneeGroup.style.display = 'block';
+                }
+            });
+        });
+
+        // Priority selection
+        const priorityOptions = document.querySelectorAll('.priority-option');
+        const priorityInput = document.getElementById('priorityInput');
+
+        priorityOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                priorityOptions.forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                priorityInput.value = this.dataset.priority;
+            });
+        });
+
+        // Form submission with loading state
+        const form = document.getElementById('taskForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const spinner = submitBtn.querySelector('.spinner');
+        const btnText = submitBtn.querySelector('span');
+
+        form.addEventListener('submit', function() {
+            submitBtn.classList.add('loading');
+            spinner.classList.remove('hidden');
+            btnText.textContent = 'Skapar uppgift...';
+            submitBtn.disabled = true;
+        });
+
+        // Auto-hide messages after 5 seconds
+        const message = document.querySelector('.message');
+        if (message) {
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 300);
+            }, 5000);
+        }
+    });
+</script>
+</body>
+</html>
