@@ -2,6 +2,7 @@ package org.springframework.backend2exercise3.service;
 
 import org.springframework.backend2exercise3.config.TrelloConfig;
 import org.springframework.backend2exercise3.model.Task;
+import org.springframework.backend2exercise3.model.TaskForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -64,6 +65,97 @@ public class TrelloService {
             return new ArrayList<>();
         }
         return getLists(trelloConfig.getBoardId());
+    }
+
+    /**
+     * Skapar en uppgift baserat på TaskForm (används av controllern)
+     * Denna metod fungerar som en bro mellan webbformuläret och Trello API:et
+     * @param taskForm Formulärdata från webbsidan
+     * @return true om uppgiften skapades framgångsrikt, annars false
+     * @throws Exception om något går fel under skapandet
+     */
+    public boolean createTask(TaskForm taskForm) throws Exception {
+        logger.info("Skapar uppgift från formulär: {}", taskForm.getTitle());
+
+        // Validera att vi har nödvändiga konfigurationer
+        if (!trelloConfig.hasDefaultListId()) {
+            throw new Exception("Ingen standard-lista är konfigurerad. Kontrollera application.yml");
+        }
+
+        if (taskForm.getTitle() == null || taskForm.getTitle().trim().isEmpty()) {
+            throw new Exception("Uppgiftstitel får inte vara tom");
+        }
+
+        try {
+            // Konvertera TaskForm till Task-objekt
+            Task task = convertFormToTask(taskForm);
+
+            // Skapa kortet i Trello
+            boolean success = createCard(trelloConfig.getDefaultListId(), task);
+
+            if (success) {
+                logger.info("Uppgift '{}' skapad framgångsrikt", taskForm.getTitle());
+                return true;
+            } else {
+                throw new Exception("Kunde inte skapa uppgift i Trello. Kontrollera API-konfiguration.");
+            }
+
+        } catch (RestClientException e) {
+            logger.error("API-fel vid skapande av uppgift: {}", e.getMessage());
+            throw new Exception("Anslutningsfel till Trello: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Oväntat fel vid skapande av uppgift: {}", e.getMessage());
+            throw new Exception("Ett oväntat fel inträffade: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Hjälpmetod för att konvertera TaskForm till Task
+     * @param taskForm Formulärdata
+     * @return Task-objekt redo för Trello API
+     */
+    private Task convertFormToTask(TaskForm taskForm) {
+        Task task = new Task();
+        task.setName(taskForm.getTitle());
+        task.setDescription(taskForm.getDescription() != null ? taskForm.getDescription() : "");
+
+        // Om TaskForm har fler fält, lägg till dem här
+        if (taskForm.getPriority() != null) {
+            // Lägg till prioritet i beskrivningen om det inte finns stöd i Task-klassen
+            String description = task.getDescription();
+            if (!description.isEmpty()) {
+                description += "\n\n";
+            }
+            description += "Prioritet: " + taskForm.getPriority();
+            task.setDescription(description);
+        }
+
+        return task;
+    }
+
+    /**
+     * Hämtar alla uppgifter från standard-listan för visning på webbsidan
+     * @return Lista med uppgifter som kan visas i Thymeleaf-mall
+     */
+    public List<Task> getAllTasksForDisplay() {
+        logger.info("Hämtar alla uppgifter för visning");
+
+        if (!trelloConfig.hasDefaultListId()) {
+            logger.warn("Ingen standard-lista konfigurerad");
+            return new ArrayList<>();
+        }
+
+        return getCardsFromDefaultList();
+    }
+
+    /**
+     * Kontrollerar om Trello-tjänsten är redo att användas
+     * @return true om allt är konfigurerat korrekt, annars false
+     */
+    public boolean isServiceReady() {
+        return trelloConfig.getKey() != null && !trelloConfig.getKey().isEmpty() &&
+                trelloConfig.getToken() != null && !trelloConfig.getToken().isEmpty() &&
+                trelloConfig.getBaseUrl() != null && !trelloConfig.getBaseUrl().isEmpty();
     }
 
     /**

@@ -22,6 +22,9 @@ public class Task {
     private String trelloCardId; // Link to Trello card if synced
     private String listId; // Trello list ID
     private String boardId; // Trello board ID
+    private String url;
+
+
 
     // Constructors
     public Task() {}
@@ -73,4 +76,12 @@ public class Task {
 
     public String getBoardId() { return boardId; }
     public void setBoardId(String boardId) { this.boardId = boardId; }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
 }
